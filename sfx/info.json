@@ -1,6 +1,8 @@
 {
     "author" : ["baiumbg", "alec#8068 (749112024633704481)"],
-    "short" : "Allow users to play TTS audio.",
-    "requirements" : ["aiofiles", "pydub"],
+    "short" : "Allow users to play TTS and SFX.",
+    "description" : "Allow users to play TTS and SFX.",
+    "install_msg": "**Thanks for installing!**",
+    "requirements" : ["pydub", "unicodedata"],
     "tags" : ["tts", "audio"]
 }

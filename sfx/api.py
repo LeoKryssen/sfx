@@ -1,41 +1,57 @@
 import urllib.parse
 
-import aiofiles
-import aiohttp
+from .voices import voices
 
 
-class TTSAPI:
-
-    voices = {
-        "clara": {"language": "english", "gender": "female", "limit": 600},
-        "matt": {"language": "english", "gender": "male", "limit": 500},
-        "carmen": {"language": "spanish", "gender": "female", "limit": 500},
-        "jose": {"language": "spanish", "gender": "male", "limit": 500},
-        "shinji": {"language": "japanese", "gender": "male", "limit": 200},
-        "kyuri": {"language": "korean", "gender": "female", "limit": 250},
-        "jinho": {"language": "korean", "gender": "male", "limit": 250},
-        "meimei": {
-            "language": "chinese (simplified)",
-            "gender": "female",
-            "limit": 200,
-        },
-        "liangliang": {"language": "chinese", "gender": "male", "limit": 150},
-        "chiahua": {
-            "language": "chinese (traditional)",
-            "gender": "female",
-            "limit": 150,
-        },
+class SpeedConverters:
+    Naver = {
+        0: 5,
+        1: 4,
+        2: 3,
+        3: 2,
+        4: 1,
+        5: 0,
+        6: -1,
+        7: -2,
+        8: -3,
+        9: -4,
+        10: -5,
     }
+    # easily extendable for more voices that support speed options
 
-    speeds = {0: 5, 1: 4, 2: 3, 3: 2, 4: 1, 5: 0, 6: -1, 7: -2, 8: -3, 9: -4, 10: -5}
 
-    async def get_audio(self, text, voice, speed, file):
-        session = aiohttp.ClientSession()
-        wrapped_text = urllib.parse.quote(text)
-        async with session.get(
-            f"https://dict.naver.com/api/nvoice?service=dictionary&speech_fmt=mp3&text={wrapped_text}&speaker={voice}&speed={speed}"
-        ) as request:
-            f = await aiofiles.open(file, mode="wb")
-            await f.write(await request.read())
-            await f.close()
-        await session.close()
+def _split_text(voice: str, text: str):
+    """
+    Input: voice: str, text: str
+    Output: list of str
+    """
+    limit = voices[voice]["limit"]
+    return [text[i : i + limit] for i in range(0, len(text), limit)]
+
+
+def _convert_speed(voice: str, config_speed: int):
+    """
+    Input: voice: str, config_speed: int
+    Output: config_speed: int
+    """
+    provider = voices[voice]["provider"]
+    if provider == "naver":
+        return SpeedConverters.Naver[config_speed]
+    return int(config_speed)
+
+
+def generate_urls(voice: str, text: str, speed: int):
+    """
+    Input: voice: str, text: str, speed: int
+    Output: list of str (urls)
+    """
+    texts = _split_text(voice, text)
+    url = voices[voice]["url"]
+    speed_bool = voices[voice]["speed"]
+    urls = []
+    for segment in texts:
+        if speed_bool:
+            url.replace("{speed}", _convert_speed(voice, speed))
+        url.replace("{text}", urllib.parse.quote(segment))
+        urls.append(url)
+    return urls
