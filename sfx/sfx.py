@@ -41,8 +41,10 @@ class SFX(commands.Cog):
         lavalink.register_event_listener(self.ll_check)
         self.bot.loop.create_task(self.check_config_version())
         self.check_audio_loaded()
+        self.bot.loop.create_task(self.fill_channel_cache())
         self.last_track_info = {}
         self.current_sfx = {}
+        self.channel_cache = {}
 
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
@@ -71,11 +73,10 @@ class SFX(commands.Cog):
                 "The audio cog needs to be loaded for this cog to function."
             )
 
-    def pad_sfx(filepath):
-        audio_data = pydub.AudioSegment.from_file(filepath)
-        silence = pydub.AudioSegment.silent(duration=750)
-        padded_audio = silence + audio_data
-        padded_audio.export(filepath)
+    async def fill_channel_cache(self):
+        all_guilds = await self.config.all_guilds()
+        for guild in all_guilds:
+            self.channel_cache[guild] = all_guilds[guild]['channels']
 
     # full credits to kable
     # https://github.com/kablekompany/Kable-Kogs/blob/master/decancer/decancer.py#L67
@@ -484,6 +485,8 @@ class SFX(commands.Cog):
         if channel.id not in channel_list:
             channel_list.append(channel.id)
             await self.config.guild(ctx.guild).channels.set(channel_list)
+            self.channel_cache[ctx.guild.id] = channel_list
+
             await ctx.send(
                 f"Okay, {channel.mention} will now be used as a TTS channel."
             )
@@ -501,6 +504,7 @@ class SFX(commands.Cog):
         if channel.id in channel_list:
             channel_list.remove(channel.id)
             await self.config.guild(ctx.guild).channels.set(channel_list)
+            self.channel_cache[ctx.guild.id] = channel_list
             await ctx.send(f"Okay, {channel.mention} is no longer a TTS channel.")
         else:
             await ctx.send(
@@ -529,6 +533,7 @@ class SFX(commands.Cog):
                 return
             if predictate.result:
                 await self.config.guild(ctx.guild).channels.set([])
+                del self.channel_cache[ctx.guild.id] 
                 await ctx.send("Okay, I've cleared all TTS channels for this server.")
             else:
                 await ctx.send("Okay, I won't clear any TTS channels.")
@@ -538,7 +543,10 @@ class SFX(commands.Cog):
         """
         Shows all the channels for automatic TTS.
         """
-        channel_list = await self.config.guild(ctx.guild).channels()
+        try:
+            channel_list = self.channel_cache[ctx.guild.id] 
+        except KeyError:
+            channel_list = []
         if not channel_list:
             await ctx.send("This server doesn't have any TTS channels set up.")
         else:
@@ -577,8 +585,10 @@ class SFX(commands.Cog):
             return
         if await self.bot.cog_disabled_in_guild(self, message.guild):
             return
-
-        channel_list = await self.config.guild(message.guild).channels()
+        try:
+            channel_list = self.channel_cache[message.guild.id] 
+        except KeyError:
+            return
 
         if not channel_list:
             return
