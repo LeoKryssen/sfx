@@ -545,7 +545,7 @@ class SFX(commands.Cog):
         try:
             channel_list = self.channel_cache[ctx.guild.id]
         except KeyError:
-            channel_list = []
+            channel_list = None
         if not channel_list:
             await ctx.send("This server doesn't have any TTS channels set up.")
         else:
