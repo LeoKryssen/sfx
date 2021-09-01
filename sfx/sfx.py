@@ -632,7 +632,7 @@ class SFX(commands.Cog):
         tracks = await player.load_tracks(query=link)
         if not tracks.tracks:
             await channel.send(
-                "Something went wrong. It's likely the input you gave wasn't valid."
+                "Something went wrong. Either the SFX is invalid, or the TTS host is down."
             )
             return
 
