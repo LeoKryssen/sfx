@@ -124,7 +124,7 @@ class SFX(commands.Cog):
             return
 
         urls = generate_urls(author_voice, text, author_speed)
-        await self.play_sfx(ctx.author.voice.channel, ctx.channel, urls, False)
+        await self.play_sfx(ctx.author.voice.channel, ctx.channel, urls)
         try:
             1 + 1
         except Exception:
@@ -162,7 +162,7 @@ class SFX(commands.Cog):
             link = global_sounds[sound]
 
         try:
-            await self.play_sfx(ctx.author.voice.channel, ctx.channel, [link], True)
+            await self.play_sfx(ctx.author.voice.channel, ctx.channel, [link])
         except Exception:
             await ctx.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
@@ -621,16 +621,16 @@ class SFX(commands.Cog):
 
         try:
             await self.play_sfx(
-                message.author.voice.channel, message.channel, urls, False
+                message.author.voice.channel, message.channel, urls
             )
         except Exception:
             await message.channel.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
             )
 
-    async def play_sfx(self, vc, channel, link, is_sfx: bool):
+    async def play_sfx(self, vc, channel, link):
         player = await lavalink.connect(vc)
-        link = link[0]  # for now
+        link = link[0] # could be rewritten to add ALL links
         tracks = await player.load_tracks(query=link)
         if not tracks.tracks:
             await channel.send(
@@ -642,7 +642,7 @@ class SFX(commands.Cog):
 
         if player.current is None and not player.queue:
             player.queue.append(track)
-            self.current_sfx[vc.guild.id] = (track, is_sfx)
+            self.current_sfx[vc.guild.id] = track
             await player.play()
             return
 
@@ -654,11 +654,11 @@ class SFX(commands.Cog):
         if csfx is not None:
             player.queue.insert(0, track)
             await player.skip()
-            self.current_sfx[vc.guild.id] = (track, is_sfx)
+            self.current_sfx[vc.guild.id] = track
             return
 
         self.last_track_info[vc.guild.id] = (player.current, player.position)
-        self.current_sfx[vc.guild.id] = (track, is_sfx)
+        self.current_sfx[vc.guild.id] = track
         player.queue.insert(0, track)
         player.queue.insert(1, player.current)
         await player.skip()
@@ -677,15 +677,7 @@ class SFX(commands.Cog):
         if csfx is None and lti is None:
             return
 
-        if event == lavalink.LavalinkEvents.TRACK_EXCEPTION and csfx is not None:
-            if csfx[1]:
-                pass  # REMOVE SFX FROM CONFIG
-            del self.current_sfx[player.guild.id]
-            return
-
-        if event == lavalink.LavalinkEvents.TRACK_STUCK and csfx is not None:
-            if csfx[1]:
-                pass  # REMOVE SFX FROM CONFIG
+        if event == lavalink.LavalinkEvents.TRACK_EXCEPTION and csfx is not None or event == lavalink.LavalinkEvents.TRACK_STUC and csfx is not None:
             del self.current_sfx[player.guild.id]
             return
 
