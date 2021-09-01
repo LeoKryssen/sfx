@@ -63,7 +63,7 @@ class SFX(commands.Cog):
             for user in all_users:
                 await self.config.user_from_id(user).speed.set(5)
             for guild in all_guilds:
-                await self.config.guild(guild).sounds.set({})
+                await self.config.guild_from_id(guild).sounds.set({})
             await self.config.schema_version.set(1)
 
     def check_audio_loaded(self):
