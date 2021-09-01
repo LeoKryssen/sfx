@@ -399,7 +399,7 @@ class SFX(commands.Cog):
             await ctx.send(f"Your new speed is **{speed}**.")
         else:
             await ctx.send(
-                f"Your new speed is **{speed}**.\n"
+                f"Your new speed is **{speed}**. "
                 "Keep in mind your current voice doesn't support speed changes, "
                 "so you won't see a difference until you change your voice to one that supports speed."
             )
@@ -454,6 +454,8 @@ class SFX(commands.Cog):
                 f"Gender: {voice_data[voice]['gender']}\n"
                 f"Language: {voice_data[voice]['languageName']}\n"
                 f"Quality: {voice_data[voice]['quality']}\n"
+                f"Supports Speed: {voice_data[voice]['speed']}\n"
+                f"Translates {voice_data[voice]['translates']}\n"
                 f"Provider: {voice_data[voice]['provider']}"
                 "```"
             )
