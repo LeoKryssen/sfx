@@ -531,7 +531,7 @@ class SFX(commands.Cog):
                 )
                 return
             if predictate.result:
-                await self.config.guild(ctx.guild).channels.set([])
+                await self.config.guild(ctx.guild).channels.clear()
                 del self.channel_cache[ctx.guild.id]
                 await ctx.send("Okay, I've cleared all TTS channels for this server.")
             else:
