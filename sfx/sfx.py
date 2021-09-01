@@ -1,6 +1,6 @@
 import asyncio
 import os
-import unicodedata2
+import unicodedata
 
 import aiohttp
 import discord
