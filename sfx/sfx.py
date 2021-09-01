@@ -455,7 +455,7 @@ class SFX(commands.Cog):
                 f"Language: {voice_data[voice]['languageName']}\n"
                 f"Quality: {voice_data[voice]['quality']}\n"
                 f"Supports Speed: {voice_data[voice]['speed']}\n"
-                f"Translates {voice_data[voice]['translates']}\n"
+                f"Translates: {voice_data[voice]['translates']}\n"
                 f"Provider: {voice_data[voice]['provider']}"
                 "```"
             )
