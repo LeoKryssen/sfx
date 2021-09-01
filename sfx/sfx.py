@@ -677,14 +677,14 @@ class SFX(commands.Cog):
         if csfx is None and lti is None:
             return
 
-        if event == lavalink.LavalinkEvents.TRACK_EXCEPTION and csfx is not None or event == lavalink.LavalinkEvents.TRACK_STUC and csfx is not None:
+        if event == lavalink.LavalinkEvents.TRACK_EXCEPTION and csfx is not None or event == lavalink.LavalinkEvents.TRACK_STUCK and csfx is not None:
             del self.current_sfx[player.guild.id]
             return
 
         if (
             event == lavalink.LavalinkEvents.TRACK_END
             and player.current is None
-            and self.current_sfx is not None
+            and csfx is not None
         ):
             del self.current_sfx[player.guild.id]
             return
@@ -696,7 +696,5 @@ class SFX(commands.Cog):
             and player.current.track_identifier == lti[0].track_identifier
         ):
             del self.current_sfx[player.guild.id]
-            await player.pause()
-            await player.seek(self.last_track_info[1])
-            await player.pause(False)
+            await player.seek(lti[1])
             del self.last_track_info[player.guild.id]
