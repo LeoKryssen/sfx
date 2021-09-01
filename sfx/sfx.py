@@ -437,9 +437,7 @@ class SFX(commands.Cog):
                 for voice in voices.keys()
                 if voices[voice]["languageCode"] == lang
             }
-        low = []
-        medium = []
-        high = []
+        qs = {"low": [], "medium": [], "high": []}
         for voice in voice_data:
             embed = discord.Embed(color=await ctx.embed_color(), title=voice)
             embed.description = (
@@ -452,13 +450,9 @@ class SFX(commands.Cog):
                 f"Provider: {voice_data[voice]['provider']}"
                 "```"
             )
-            if voice_data[voice]["quality"] == "Low":
-                low.append(embed)
-            elif voice_data[voice]["quality"] == "Medium":
-                medium.append(embed)
-            elif voice_data[voice]["quality"] == "High":
-                high.append(embed)
-        pages = high + medium + low
+            q = voice_data[voice]["quality"].lower()
+            qs[q].append(embed)
+        pages = qs["high"] + qs["medium"] + qs["low"]
 
         for index, embed in enumerate(pages):
             if len(pages) > 1:
