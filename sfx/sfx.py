@@ -161,7 +161,7 @@ class SFX(commands.Cog):
             link = global_sounds[sound]
 
         try:
-            await self.play_sfx(ctx.author.voice.channel, ctx.channel, link, True)
+            await self.play_sfx(ctx.author.voice.channel, ctx.channel, [link], True)
         except Exception:
             await ctx.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
@@ -178,9 +178,6 @@ class SFX(commands.Cog):
         Syntax:`[p]addsfx <name>` or `[p]addsfx <name> <link>`.
         """
         guild_sounds = await self.config.guild(ctx.guild).sounds()
-
-        if str(ctx.guild.id) not in os.listdir(self.sound_base):
-            os.makedirs(os.path.join(self.sound_base, str(ctx.guild.id)))
 
         attachments = ctx.message.attachments
         if len(attachments) > 1 or (attachments and link):
@@ -200,8 +197,10 @@ class SFX(commands.Cog):
             )
             return
 
-        file_name, file_extension = os.path.splitext(filename)
         filename = "".join(url.split("/")[-1:]).replace("%20", "_")
+        file_name, file_extension = os.path.splitext(filename)
+
+        print(file_extension)
 
         if file_extension != ".wav" and file_extension != ".mp3":
             await ctx.send(
@@ -316,11 +315,6 @@ class SFX(commands.Cog):
         """
         Lists all available sounds for this server.
         """
-
-        if str(ctx.guild.id) not in os.listdir(self.sound_base):
-            await self.bot.loop.run_in_executor(
-                None, os.makedirs, os.path.join(self.sound_base, str(ctx.guild.id))
-            )
 
         guild_sounds = await self.config.guild(ctx.guild).sounds()
         global_sounds = await self.config.sounds()
