@@ -126,7 +126,7 @@ class SFX(commands.Cog):
         urls = generate_urls(author_voice, text, author_speed)
         await self.play_sfx(ctx.author.voice.channel, ctx.channel, urls, False)
         try:
-            1+1
+            1 + 1
         except Exception:
             await ctx.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
@@ -621,7 +621,9 @@ class SFX(commands.Cog):
         urls = generate_urls(author_voice, text, author_speed)
 
         try:
-            await self.play_sfx(message.author.voice.channel, message.channel, urls, False)
+            await self.play_sfx(
+                message.author.voice.channel, message.channel, urls, False
+            )
         except Exception:
             await message.channel.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
@@ -629,12 +631,14 @@ class SFX(commands.Cog):
 
     async def play_sfx(self, vc, channel, link, is_sfx: bool):
         player = await lavalink.connect(vc)
-        link = link[0] # for now
+        link = link[0]  # for now
         tracks = await player.load_tracks(query=link)
         if not tracks.tracks:
-            await channel.send("Something went wrong. It's likely the input you gave wasn't valid.")
+            await channel.send(
+                "Something went wrong. It's likely the input you gave wasn't valid."
+            )
             return
-            
+
         track = tracks.tracks[0]
 
         if player.current is None and not player.queue:
@@ -665,7 +669,7 @@ class SFX(commands.Cog):
             csfx = self.current_sfx[player.guild.id]
         except KeyError:
             csfx = None
-        
+
         try:
             lti = self.last_track_info[player.guild.id]
         except KeyError:
@@ -673,24 +677,16 @@ class SFX(commands.Cog):
 
         if csfx is None and lti is None:
             return
-        
-        
 
-        if (
-            event == lavalink.LavalinkEvents.TRACK_EXCEPTION
-            and csfx is not None
-        ):
+        if event == lavalink.LavalinkEvents.TRACK_EXCEPTION and csfx is not None:
             if csfx[1]:
-                pass # REMOVE SFX FROM CONFIG
+                pass  # REMOVE SFX FROM CONFIG
             del self.current_sfx[player.guild.id]
             return
 
-        if (
-            event == lavalink.LavalinkEvents.TRACK_STUCK
-            and csfx is not None
-        ):
+        if event == lavalink.LavalinkEvents.TRACK_STUCK and csfx is not None:
             if csfx[1]:
-                pass # REMOVE SFX FROM CONFIG
+                pass  # REMOVE SFX FROM CONFIG
             del self.current_sfx[player.guild.id]
             return
 
@@ -706,8 +702,7 @@ class SFX(commands.Cog):
             event == lavalink.LavalinkEvents.TRACK_END
             and lti is not None
             and player.current
-            and player.current.track_identifier
-            == lti[0].track_identifier
+            and player.current.track_identifier == lti[0].track_identifier
         ):
             del self.current_sfx[player.guild.id]
             await player.pause()
