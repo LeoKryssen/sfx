@@ -2,13 +2,12 @@ import asyncio
 import os
 import unicodedata
 
-import aiofiles
 import aiohttp
 import discord
 import lavalink
 import pydub
 import unidecode
-from redbot.core import Config, checks, commands, data_manager
+from redbot.core import Config, checks, commands
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.predicates import MessagePredicate
 
