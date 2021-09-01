@@ -76,7 +76,7 @@ class SFX(commands.Cog):
     async def fill_channel_cache(self):
         all_guilds = await self.config.all_guilds()
         for guild in all_guilds:
-            self.channel_cache[guild] = all_guilds[guild]['channels']
+            self.channel_cache[guild] = all_guilds[guild]["channels"]
 
     # full credits to kable
     # https://github.com/kablekompany/Kable-Kogs/blob/master/decancer/decancer.py#L67
@@ -203,7 +203,7 @@ class SFX(commands.Cog):
 
         print(file_extension)
 
-        if file_extension != ".wav" and file_extension != ".mp3":
+        if file_extension not in [".wav", ".mp3"]:
             await ctx.send(
                 "Sorry, only SFX in .mp3 and .wav format are supported at this time."
             )
@@ -273,7 +273,7 @@ class SFX(commands.Cog):
         filename = "".join(url.split("/")[-1:]).replace("%20", "_")
         file_name, file_extension = os.path.splitext(filename)
 
-        if file_extension != ".wav" and file_extension != ".mp3":
+        if file_extension not in [".wav", ".mp3"]:
             await ctx.send(
                 "Sorry, only SFX in .mp3 and .wav format are supported at this time."
             )
@@ -334,9 +334,8 @@ class SFX(commands.Cog):
         if global_sounds:
             txt += "\n**Global Sounds**:\n"
             for sound in global_sounds:
-                if guild_sounds:
-                    if sound in guild_sounds:
-                        txt += sound + " (disabled)\n"
+                if guild_sounds and sound in guild_sounds:
+                    txt += sound + " (disabled)\n"
                 txt += sound + "\n"
 
         pages = [p for p in pagify(text=txt, delims="\n")]
@@ -533,7 +532,7 @@ class SFX(commands.Cog):
                 return
             if predictate.result:
                 await self.config.guild(ctx.guild).channels.set([])
-                del self.channel_cache[ctx.guild.id] 
+                del self.channel_cache[ctx.guild.id]
                 await ctx.send("Okay, I've cleared all TTS channels for this server.")
             else:
                 await ctx.send("Okay, I won't clear any TTS channels.")
@@ -544,15 +543,16 @@ class SFX(commands.Cog):
         Shows all the channels for automatic TTS.
         """
         try:
-            channel_list = self.channel_cache[ctx.guild.id] 
+            channel_list = self.channel_cache[ctx.guild.id]
         except KeyError:
             channel_list = []
         if not channel_list:
             await ctx.send("This server doesn't have any TTS channels set up.")
         else:
-            text = ""
-            for channel in channel_list:
-                text += "<#" + str(channel) + "> - " + str(channel) + "\n"
+            text = "".join(
+                "<#" + str(channel) + "> - " + str(channel) + "\n"
+                for channel in channel_list
+            )
             pages = [p for p in pagify(text=text, delims="\n")]
             embeds = []
             for index, page in enumerate(pages):
@@ -586,7 +586,7 @@ class SFX(commands.Cog):
         if await self.bot.cog_disabled_in_guild(self, message.guild):
             return
         try:
-            channel_list = self.channel_cache[message.guild.id] 
+            channel_list = self.channel_cache[message.guild.id]
         except KeyError:
             return
 
@@ -620,9 +620,7 @@ class SFX(commands.Cog):
         urls = generate_urls(author_voice, text, author_speed)
 
         try:
-            await self.play_sfx(
-                message.author.voice.channel, message.channel, urls
-            )
+            await self.play_sfx(message.author.voice.channel, message.channel, urls)
         except Exception:
             await message.channel.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
@@ -630,7 +628,7 @@ class SFX(commands.Cog):
 
     async def play_sfx(self, vc, channel, link):
         player = await lavalink.connect(vc)
-        link = link[0] # could be rewritten to add ALL links
+        link = link[0]  # could be rewritten to add ALL links
         tracks = await player.load_tracks(query=link)
         if not tracks.tracks:
             await channel.send(
@@ -677,7 +675,12 @@ class SFX(commands.Cog):
         if csfx is None and lti is None:
             return
 
-        if event == lavalink.LavalinkEvents.TRACK_EXCEPTION and csfx is not None or event == lavalink.LavalinkEvents.TRACK_STUCK and csfx is not None:
+        if (
+            event == lavalink.LavalinkEvents.TRACK_EXCEPTION
+            and csfx is not None
+            or event == lavalink.LavalinkEvents.TRACK_STUCK
+            and csfx is not None
+        ):
             del self.current_sfx[player.guild.id]
             return
 
