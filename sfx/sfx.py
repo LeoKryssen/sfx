@@ -31,10 +31,7 @@ class SFX(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.last_track_info = None
-        self.current_sfx = None
         self.config = Config.get_conf(self, identifier=134621854878007296)
-        self.sound_base = (data_manager.cog_data_path(self) / "sounds").as_posix()
         self.session = aiohttp.ClientSession()
         user_config = {"voice": "clara", "speed": 5}
         guild_config = {"sounds": {}, "channels": []}
@@ -43,11 +40,10 @@ class SFX(commands.Cog):
         self.config.register_guild(**guild_config)
         self.config.register_global(**global_config)
         lavalink.register_event_listener(self.ll_check)
-        if not os.path.exists(self.sound_base):
-            os.makedirs(self.sound_base)
         self.bot.loop.create_task(self.check_config_version())
         self.check_audio_loaded()
-        self.queue = asyncio.Queue()
+        self.last_track_info = {}
+        self.current_sfx = {}
 
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
@@ -62,8 +58,11 @@ class SFX(commands.Cog):
         schema_version = await self.config.schema_version()
         if schema_version == 0:
             all_users = await self.config.all_users()
+            all_guilds = await self.config.all_guilds()
             for user in all_users:
                 await self.config.user_from_id(user).speed.set(5)
+            for guild in all_guilds:
+                await self.config.guild(guild).sounds.set({})
             await self.config.schema_version.set(1)
 
     def check_audio_loaded(self):
@@ -125,9 +124,9 @@ class SFX(commands.Cog):
             return
 
         urls = generate_urls(author_voice, text, author_speed)
-
+        await self.play_sfx(ctx.author.voice.channel, ctx.channel, urls, False)
         try:
-            await self._play_sfx(ctx.author.voice.channel, urls, True)
+            1+1
         except Exception:
             await ctx.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
@@ -148,58 +147,22 @@ class SFX(commands.Cog):
             await ctx.send("You are not connected to a voice channel.")
             return
 
-        if str(ctx.guild.id) not in os.listdir(self.sound_base):
-            os.makedirs(os.path.join(self.sound_base, str(ctx.guild.id)))
-
         guild_sounds = await self.config.guild(ctx.guild).sounds()
         global_sounds = await self.config.sounds()
 
-        if sound not in guild_sounds.keys():
-            if sound not in global_sounds.keys():
-                await ctx.send(
-                    f"Sound **{sound}** does not exist. Try `{ctx.clean_prefix}listsfx` for a list."
-                )
-                return
+        if sound not in guild_sounds.keys() and sound not in global_sounds.keys():
+            await ctx.send(
+                f"Sound **{sound}** does not exist. Try `{ctx.clean_prefix}listsfx` for a list."
+            )
+            return
 
         if sound in guild_sounds.keys():
-            filepath = os.path.join(
-                self.sound_base, str(ctx.guild.id), guild_sounds[sound]
-            )
+            link = guild_sounds[sound]
         else:
-            filepath = os.path.join(self.sound_base, global_sounds[sound])
-
-        if not os.path.exists(filepath):
-            if sound in guild_sounds.keys():
-                del guild_sounds[sound]
-                await self.config.guild(ctx.guild).sounds.set(guild_sounds)
-                await ctx.send(
-                    "Uh oh, it looks like the file was manually deleted. I've removed it from my list this won't happen again."
-                )
-                if sound in global_sounds.keys():
-                    del global_sounds[sound]
-                    await self.config.sounds.set(global_sounds)
-                    await ctx.send(
-                        "Uh oh, it looks like the file was manually deleted. I've removed it from my list this won't happen again."
-                    )
-                    return
-                else:
-                    return
-            elif sound in global_sounds.keys():
-                del global_sounds[sound]
-                await self.config.sounds.set(global_sounds)
-                await ctx.send(
-                    "Uh oh, it looks like the file was manually deleted. I've removed it from my list this won't happen again."
-                )
-                if sound in global_sounds.keys():
-                    del global_sounds[sound]
-                    await self.config.sounds.set(global_sounds)
-                    await ctx.send(
-                        "Uh oh, it looks like the file was manually deleted. I've removed it from my list this won't happen again."
-                    )
-                return
+            link = global_sounds[sound]
 
         try:
-            await self._play_sfx(ctx.author.voice.channel, filepath)
+            await self.play_sfx(ctx.author.voice.channel, ctx.channel, link, True)
         except Exception:
             await ctx.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
@@ -230,10 +193,8 @@ class SFX(commands.Cog):
         if attachments:
             attachment = attachments[0]
             url = attachment.url
-            filename = attachment.filename
         elif link:
             url = "".join(link)
-            filename = "".join(url.split("/")[-1:]).replace("%20", "_")
         else:
             await ctx.send(
                 "You must provide either a Discord attachment or a direct link to a sound."
@@ -241,13 +202,13 @@ class SFX(commands.Cog):
             return
 
         file_name, file_extension = os.path.splitext(filename)
+        filename = "".join(url.split("/")[-1:]).replace("%20", "_")
+
         if file_extension != ".wav" and file_extension != ".mp3":
             await ctx.send(
                 "Sorry, only SFX in .mp3 and .wav format are supported at this time."
             )
             return
-
-        filepath = os.path.join(self.sound_base, str(ctx.guild.id), filename)
 
         if name in guild_sounds.keys():
             await ctx.send(
@@ -255,20 +216,7 @@ class SFX(commands.Cog):
             )
             return
 
-        if os.path.exists(filepath):
-            await ctx.send(
-                "A sound with that filename already exists. Please change the filename and try again."
-            )
-            return
-
-        async with self.session.get(url) as new_sound:
-            f = await aiofiles.open(filepath, mode="wb")
-            await f.write(await new_sound.read())
-            await f.close()
-
-        await self.bot.loop.run_in_executor(None, self.pad_sfx, filepath)
-
-        guild_sounds[name] = filename
+        guild_sounds[name] = url
         await self.config.guild(ctx.guild).sounds.set(guild_sounds)
 
         await ctx.send(f"Sound **{name}** has been added.")
@@ -281,26 +229,16 @@ class SFX(commands.Cog):
         Deletes an existing sound.
         """
 
-        if str(ctx.guild.id) not in os.listdir(self.sound_base):
-            os.makedirs(os.path.join(self.sound_base, str(ctx.guild.id)))
+        guild_sounds = await self.config.guild(ctx.guild).sounds()
 
-        cfg_sounds = await self.config.guild(ctx.guild).sounds()
-
-        if soundname not in cfg_sounds.keys():
+        if soundname not in guild_sounds.keys():
             await ctx.send(
                 f"Sound **{soundname}** does not exist. Try `{ctx.prefix}listsfx` for a list."
             )
             return
 
-        filepath = os.path.join(
-            self.sound_base, str(ctx.guild.id), cfg_sounds[soundname]
-        )
-
-        if os.path.exists(filepath):
-            await self.bot.loop.run_in_executor(None, os.remove, filepath)
-
-        del cfg_sounds[soundname]
-        await self.config.guild(ctx.guild).sounds.set(cfg_sounds)
+        del guild_sounds[soundname]
+        await self.config.guild(ctx.guild).sounds.set(guild_sounds)
 
         await ctx.send(f"Sound **{soundname}** deleted.")
 
@@ -316,37 +254,31 @@ class SFX(commands.Cog):
         """
         global_sounds = await self.config.sounds()
 
-        if str(ctx.guild.id) not in os.listdir(self.sound_base):
-            os.makedirs(os.path.join(self.sound_base, str(ctx.guild.id)))
-
         attachments = ctx.message.attachments
         if len(attachments) > 1 or (attachments and link):
             await ctx.send("Please only try to add one SFX at a time.")
             return
 
         url = ""
-        filename = ""
         if attachments:
             attachment = attachments[0]
             url = attachment.url
-            filename = attachment.filename
         elif link:
             url = "".join(link)
-            filename = "".join(url.split("/")[-1:]).replace("%20", "_")
         else:
             await ctx.send(
                 "You must provide either a Discord attachment or a direct link to a sound."
             )
             return
 
+        filename = "".join(url.split("/")[-1:]).replace("%20", "_")
         file_name, file_extension = os.path.splitext(filename)
+
         if file_extension != ".wav" and file_extension != ".mp3":
             await ctx.send(
                 "Sorry, only SFX in .mp3 and .wav format are supported at this time."
             )
             return
-
-        filepath = os.path.join(self.sound_base, filename)
 
         if name in global_sounds.keys():
             await ctx.send(
@@ -354,48 +286,30 @@ class SFX(commands.Cog):
             )
             return
 
-        if os.path.exists(filepath):
-            await ctx.send(
-                "A sound with that filename already exists. Please change the filename and try again."
-            )
-            return
-
-        async with self.session.get(url) as new_sound:
-            f = await aiofiles.open(filepath, mode="wb")
-            await f.write(await new_sound.read())
-            await f.close()
-
-        await self.bot.loop.run_in_executor(None, self.pad_sfx, filepath)
-
-        global_sounds[name] = filename
+        global_sounds[name] = link
         await self.config.sounds.set(global_sounds)
 
         await ctx.send(f"Sound **{name}** has been added.")
 
     @commands.command()
     @checks.is_owner()
-    async def delglobalsfx(self, ctx, soundname: str):
+    async def delglobalsfx(self, ctx, name: str):
         """
         Deletes an existing global sound.
         """
 
         global_sounds = await self.config.sounds()
 
-        if soundname not in global_sounds.keys():
+        if name not in global_sounds.keys():
             await ctx.send(
-                f"Sound **{soundname}** does not exist. Try `{ctx.prefix}listsfx` for a list."
+                f"Sound **{name}** does not exist. Try `{ctx.prefix}listsfx` for a list."
             )
             return
 
-        filepath = os.path.join(self.sound_base, global_sounds[soundname])
-
-        if os.path.exists(filepath):
-            await self.bot.loop.run_in_executor(None, os.remove, filepath)
-
-        del global_sounds[soundname]
+        del global_sounds[name]
         await self.config.sounds.set(global_sounds)
 
-        await ctx.send(f"Sound **{soundname}** deleted.")
+        await ctx.send(f"Sound **{name}** deleted.")
 
     @commands.command()
     @commands.guild_only()
@@ -707,14 +621,96 @@ class SFX(commands.Cog):
         urls = generate_urls(author_voice, text, author_speed)
 
         try:
-            await self._play_sfx(message.author.voice.channel, urls, True)
+            await self.play_sfx(message.author.voice.channel, message.channel, urls, False)
         except Exception:
             await message.channel.send(
                 "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
             )
 
-    async def _play_sfx(self, vc, filepath, is_tts=False):
+    async def play_sfx(self, vc, channel, link, is_sfx: bool):
         player = await lavalink.connect(vc)
+        link = link[0] # for now
+        tracks = await player.load_tracks(query=link)
+        if not tracks.tracks:
+            await channel.send("Something went wrong. It's likely the input you gave wasn't valid.")
+            return
+            
+        track = tracks.tracks[0]
+
+        if player.current is None and not player.queue:
+            player.queue.append(track)
+            self.current_sfx[vc.guild.id] = (track, is_sfx)
+            await player.play()
+            return
+
+        try:
+            csfx = self.current_sfx[vc.guild.id]
+        except KeyError:
+            csfx = None
+
+        if csfx is not None:
+            player.queue.insert(0, track)
+            await player.skip()
+            self.current_sfx[vc.guild.id] = (track, is_sfx)
+            return
+
+        self.last_track_info[vc.guild.id] = (player.current, player.position)
+        self.current_sfx[vc.guild.id] = (track, is_sfx)
+        player.queue.insert(0, track)
+        player.queue.insert(1, player.current)
+        await player.skip()
 
     async def ll_check(self, player, event, reason):
-        pass
+        try:
+            csfx = self.current_sfx[player.guild.id]
+        except KeyError:
+            csfx = None
+        
+        try:
+            lti = self.last_track_info[player.guild.id]
+        except KeyError:
+            lti = None
+
+        if csfx is None and lti is None:
+            return
+        
+        
+
+        if (
+            event == lavalink.LavalinkEvents.TRACK_EXCEPTION
+            and csfx is not None
+        ):
+            if csfx[1]:
+                pass # REMOVE SFX FROM CONFIG
+            del self.current_sfx[player.guild.id]
+            return
+
+        if (
+            event == lavalink.LavalinkEvents.TRACK_STUCK
+            and csfx is not None
+        ):
+            if csfx[1]:
+                pass # REMOVE SFX FROM CONFIG
+            del self.current_sfx[player.guild.id]
+            return
+
+        if (
+            event == lavalink.LavalinkEvents.TRACK_END
+            and player.current is None
+            and self.current_sfx is not None
+        ):
+            del self.current_sfx[player.guild.id]
+            return
+
+        if (
+            event == lavalink.LavalinkEvents.TRACK_END
+            and lti is not None
+            and player.current
+            and player.current.track_identifier
+            == lti[0].track_identifier
+        ):
+            del self.current_sfx[player.guild.id]
+            await player.pause()
+            await player.seek(self.last_track_info[1])
+            await player.pause(False)
+            del self.last_track_info[player.guild.id]

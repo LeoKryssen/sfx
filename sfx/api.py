@@ -3,8 +3,8 @@ import urllib.parse
 from .voices import voices
 
 
-class SpeedConverters:
-    Naver = {
+SpeedRamps = {
+    "Naver" : {
         0: 5,
         1: 4,
         2: 3,
@@ -17,7 +17,8 @@ class SpeedConverters:
         9: -4,
         10: -5,
     }
-    # easily extendable for more voices that support speed options
+}
+
 
 
 def _split_text(voice: str, text: str):
@@ -35,8 +36,7 @@ def _convert_speed(voice: str, config_speed: int):
     Output: config_speed: int
     """
     provider = voices[voice]["provider"]
-    if provider == "naver":
-        return SpeedConverters.Naver[config_speed]
+    config_speed = SpeedRamps[provider][config_speed]
     return int(config_speed)
 
 
@@ -50,8 +50,9 @@ def generate_urls(voice: str, text: str, speed: int):
     speed_bool = voices[voice]["speed"]
     urls = []
     for segment in texts:
+        turl = "".join(url)
         if speed_bool:
-            url.replace("{speed}", _convert_speed(voice, speed))
-        url.replace("{text}", urllib.parse.quote(segment))
-        urls.append(url)
+            turl = turl.replace("{speed}", str(_convert_speed(voice, speed)))
+        turl = turl.replace("{text}", str(urllib.parse.quote(segment)))
+        urls.append(turl)
     return urls
