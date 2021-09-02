@@ -58,12 +58,10 @@ class SFX(commands.Cog):
     async def check_config_version(self):
         schema_version = await self.config.schema_version()
         if schema_version == 0:
-            all_users = await self.config.all_users()
+            await self.config.clear_all_users()
             all_guilds = await self.config.all_guilds()
-            for user in all_users:
-                await self.config.user_from_id(user).speed.set(5)
             for guild in all_guilds:
-                await self.config.guild_from_id(guild).sounds.set({})
+                await self.config.guild_from_id(guild).sounds.clear()
             await self.config.schema_version.set(1)
 
     def check_audio_loaded(self):
