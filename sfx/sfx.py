@@ -358,7 +358,6 @@ class SFX(commands.Cog):
             return
         voice = voice.title()
         if voice in voices.keys():
-            await ctx.send(f"Setting voice to **{voice}**")
             await self.config.user(ctx.author).voice.set(voice)
             await ctx.send(f"Your new TTS voice is: **{voice}**")
         else:
