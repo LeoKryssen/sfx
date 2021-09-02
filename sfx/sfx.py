@@ -32,7 +32,7 @@ class SFX(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=134621854878007296)
         self.session = aiohttp.ClientSession()
-        user_config = {"voice": "clara", "speed": 5}
+        user_config = {"voice": "Clara", "speed": 5}
         guild_config = {"sounds": {}, "channels": []}
         global_config = {"sounds": {}, "schema_version": 0}
         self.config.register_user(**user_config)
