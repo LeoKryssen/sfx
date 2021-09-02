@@ -58,6 +58,7 @@ class SFX(commands.Cog):
         schema_version = await self.config.schema_version()
         if schema_version == 0:
             await self.config.clear_all_users()
+            await self.config.sounds.clear()
             all_guilds = await self.config.all_guilds()
             for guild in all_guilds:
                 await self.config.guild_from_id(guild).sounds.clear()
