@@ -5,7 +5,6 @@ import unicodedata
 import aiohttp
 import discord
 import lavalink
-import pydub
 import unidecode
 from redbot.core import Config, checks, commands
 from redbot.core.utils.chat_formatting import pagify
@@ -74,7 +73,10 @@ class SFX(commands.Cog):
     async def fill_channel_cache(self):
         all_guilds = await self.config.all_guilds()
         for guild in all_guilds:
-            self.channel_cache[guild] = all_guilds[guild]["channels"]
+            try:
+                self.channel_cache[guild] = all_guilds[guild]["channels"]
+            except KeyError:
+                pass # no channels set
 
     # full credits to kable
     # https://github.com/kablekompany/Kable-Kogs/blob/master/decancer/decancer.py#L67
@@ -356,6 +358,7 @@ class SFX(commands.Cog):
             return
         voice = voice.title()
         if voice in voices.keys():
+            await ctx.send(f"Setting voice to **{voice}**")
             await self.config.user(ctx.author).voice.set(voice)
             await ctx.send(f"Your new TTS voice is: **{voice}**")
         else:
