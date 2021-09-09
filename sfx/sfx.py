@@ -39,7 +39,7 @@ class SFX(commands.Cog):
         self.config.register_global(**global_config)
         lavalink.register_event_listener(self.ll_check)
         self.bot.loop.create_task(self.check_config_version())
-        self.check_audio_loaded()
+        # self.check_audio_loaded()
         self.bot.loop.create_task(self.fill_channel_cache())
         self.last_track_info = {}
         self.current_sfx = {}
