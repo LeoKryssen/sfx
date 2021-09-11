@@ -25,7 +25,7 @@ from .voices import voices
 class SFX(commands.Cog):
     """Plays uploaded sounds or text-to-speech."""
 
-    __version__ = "2.0.0.dev1"
+    __version__ = "2.0.0"
 
     def __init__(self, bot):
         self.bot = bot
