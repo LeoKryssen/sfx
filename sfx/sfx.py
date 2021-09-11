@@ -39,7 +39,6 @@ class SFX(commands.Cog):
         self.config.register_global(**global_config)
         lavalink.register_event_listener(self.ll_check)
         self.bot.loop.create_task(self.check_config_version())
-        # self.check_audio_loaded()
         self.bot.loop.create_task(self.fill_channel_cache())
         self.last_track_info = {}
         self.current_sfx = {}
@@ -63,13 +62,6 @@ class SFX(commands.Cog):
             for guild in all_guilds:
                 await self.config.guild_from_id(guild).sounds.clear()
             await self.config.schema_version.set(1)
-
-    def check_audio_loaded(self):
-        audio = self.bot.get_cog("Audio")
-        if not audio:
-            raise RuntimeError(
-                "The audio cog needs to be loaded for this cog to function."
-            )
 
     async def fill_channel_cache(self):
         all_guilds = await self.config.all_guilds()
