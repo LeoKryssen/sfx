@@ -681,10 +681,10 @@ class SFX(commands.Cog):
         if csfx is not None:
             player.queue.insert(0, track)
             await player.skip()
-            self.current_sfx[vc.guild.id] = track
+            self.current_sfx[player.guild.id] = track
             return
 
-        self.last_track_info[vc.guild.id] = (player.current, player.position)
+        self.last_track_info[player.guild.id] = (player.current, player.position)
         self.current_sfx[vc.guild.id] = track
         player.queue.insert(0, track)
         player.queue.insert(1, player.current)
@@ -745,7 +745,7 @@ class SFX(commands.Cog):
         if (
             event == lavalink.LavalinkEvents.TRACK_END
             and lti is not None
-            and player.current
+            and player.current is not None
             and player.current.track_identifier == lti[0].track_identifier
         ):
             del self.current_sfx[player.guild.id]
