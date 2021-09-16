@@ -680,7 +680,6 @@ class SFX(commands.Cog):
 
         if csfx is not None:
             player.queue.insert(0, track)
-            player.queue.insert(1, player.current)
             await player.skip()
             self.current_sfx[vc.guild.id] = track
             return
@@ -721,8 +720,7 @@ class SFX(commands.Cog):
 
         self.last_track_info[vc.guild.id] = (player.current, player.position)
         self.current_sfx[vc.guild.id] = track
-        player.queue.insert(0, track)
-        player.queue.insert(1, player.current)
+        player.queue.append(track)
         await player.skip()
 
     async def ll_check(self, player, event, reason):
