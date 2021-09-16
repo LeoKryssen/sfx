@@ -162,6 +162,42 @@ class SFX(commands.Cog):
             )
 
     @commands.command()
+    @commands.cooldown(
+        rate=1, per=1, type=discord.ext.commands.cooldowns.BucketType.guild
+    )
+    @commands.guild_only()
+    async def qsfx(self, ctx, sound: str):
+        """
+        Queues an existing sound in your current voice channel.
+        If a guild SFX exists with the same name as a global one, the guild SFX will be played.
+        """
+
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            await ctx.send("You are not connected to a voice channel.")
+            return
+
+        guild_sounds = await self.config.guild(ctx.guild).sounds()
+        global_sounds = await self.config.sounds()
+
+        if sound not in guild_sounds.keys() and sound not in global_sounds.keys():
+            await ctx.send(
+                f"Sound **{sound}** does not exist. Try `{ctx.clean_prefix}listsfx` for a list."
+            )
+            return
+
+        if sound in guild_sounds.keys():
+            link = guild_sounds[sound]
+        else:
+            link = global_sounds[sound]
+
+        try:
+            await self.queue_sfx(ctx.author.voice.channel, ctx.channel, [link])
+        except Exception:
+            await ctx.send(
+                "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
+            )
+
+    @commands.command()
     @commands.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
     async def addsfx(self, ctx, name: str, link: str = None):
@@ -644,7 +680,42 @@ class SFX(commands.Cog):
 
         if csfx is not None:
             player.queue.insert(0, track)
+            player.queue.insert(1, player.current)
             await player.skip()
+            self.current_sfx[vc.guild.id] = track
+            return
+
+        self.last_track_info[vc.guild.id] = (player.current, player.position)
+        self.current_sfx[vc.guild.id] = track
+        player.queue.insert(0, track)
+        player.queue.insert(1, player.current)
+        await player.skip()
+
+    async def queue_sfx(self, vc, channel, link):
+        player = await lavalink.connect(vc)
+        link = link[0]  # could be rewritten to add ALL links
+        tracks = await player.load_tracks(query=link)
+        if not tracks.tracks:
+            await channel.send(
+                "Something went wrong. Either the SFX is invalid, or the TTS host is down."
+            )
+            return
+
+        track = tracks.tracks[0]
+
+        if player.current is None and not player.queue:
+            player.queue.append(track)
+            self.current_sfx[vc.guild.id] = track
+            await player.play()
+            return
+
+        try:
+            csfx = self.current_sfx[vc.guild.id]
+        except KeyError:
+            csfx = None
+
+        if csfx is not None:
+            player.queue.append(track)
             self.current_sfx[vc.guild.id] = track
             return
 
