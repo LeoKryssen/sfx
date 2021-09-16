@@ -230,8 +230,6 @@ class SFX(commands.Cog):
         filename = "".join(url.split("/")[-1:]).replace("%20", "_")
         file_name, file_extension = os.path.splitext(filename)
 
-        print(file_extension)
-
         if file_extension not in [".wav", ".mp3"]:
             await ctx.send(
                 "Sorry, only SFX in .mp3 and .wav format are supported at this time."
@@ -371,6 +369,57 @@ class SFX(commands.Cog):
 
         for page in pages:
             await ctx.send(page)
+
+    @commands.command()
+    @commands.guild_only()
+    async def fplay(self, ctx, link: str = None):
+        """
+        Adds a file to the music queue.
+        Either upload the file as a Discord attachment or use a link.
+
+        Syntax:`[p]fplay` or `[p]fplay <link>`.
+        """
+
+        attachments = ctx.message.attachments
+        if len(attachments) > 1 or (attachments and link):
+            await ctx.send("Please only try to add one file at a time.")
+            return
+
+        url = ""
+        filename = ""
+        if attachments:
+            attachment = attachments[0]
+            url = attachment.url
+        elif link:
+            url = "".join(link)
+        else:
+            await ctx.send(
+                "You must provide either a Discord attachment or a direct link to a sound."
+            )
+            return
+
+        filename = "".join(url.split("/")[-1:]).replace("%20", "_")
+        file_name, file_extension = os.path.splitext(filename)
+
+        if file_extension not in [".wav", ".mp3"]:
+            await ctx.send(
+                "Sorry, only files in .mp3 and .wav format are supported at this time."
+            )
+            return
+
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            await ctx.send("You are not connected to a voice channel.")
+            return
+
+        guild_sounds = await self.config.guild(ctx.guild).sounds()
+        global_sounds = await self.config.sounds()
+
+        try:
+            await self.queue_sfx(ctx.author.voice.channel, ctx.channel, [url])
+        except Exception:
+            await ctx.send(
+                "Oops, an error occured. If this continues please use the contact command to inform the bot owner."
+            )
 
     @commands.command(aliases=["setvoice"])
     async def myvoice(self, ctx, voice: str = None):
