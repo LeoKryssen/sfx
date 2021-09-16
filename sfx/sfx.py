@@ -708,20 +708,8 @@ class SFX(commands.Cog):
             await player.play()
             return
 
-        try:
-            csfx = self.current_sfx[vc.guild.id]
-        except KeyError:
-            csfx = None
-
-        if csfx is not None:
-            player.queue.append(track)
-            self.current_sfx[vc.guild.id] = track
-            return
-
-        self.last_track_info[vc.guild.id] = (player.current, player.position)
-        self.current_sfx[vc.guild.id] = track
         player.queue.append(track)
-        await player.skip()
+        return
 
     async def ll_check(self, player, event, reason):
         try:
