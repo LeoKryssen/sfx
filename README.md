@@ -6,3 +6,4 @@ Just to make this repository more simple, I've removed all the other cogs from h
 ## changelog
 - Add current song back onto playlist instead of skipping it
 - Allow queueing SFX 
+- Allow adding music file to queue
