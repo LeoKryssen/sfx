@@ -739,7 +739,6 @@ class SFX(commands.Cog):
         player.queue.insert(1, player.current)
         await player.pause()
         await player.skip()
-        await player.pause(False)
 
     async def queue_sfx(self, vc, channel, link):
         player = await lavalink.connect(vc)
