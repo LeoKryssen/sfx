@@ -737,7 +737,9 @@ class SFX(commands.Cog):
         self.current_sfx[vc.guild.id] = track
         player.queue.insert(0, track)
         player.queue.insert(1, player.current)
+        await player.pause()
         await player.skip()
+        await player.pause(False)
 
     async def queue_sfx(self, vc, channel, link):
         player = await lavalink.connect(vc)
