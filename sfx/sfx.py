@@ -269,7 +269,6 @@ class SFX(commands.Cog):
         await ctx.send(f"Sound **{soundname}** deleted.")
 
     @commands.command()
-    @commands.is_owner()
     @commands.guild_only()
     async def addglobalsfx(self, ctx, name: str, link: str = None):
         """
