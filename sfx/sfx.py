@@ -46,7 +46,7 @@ class SFX(commands.Cog):
         self.current_sfx = {}
         self.channel_cache = {}
         # lag_time to compensate for skipping lavalink lag
-        self.lag_time = 2000
+        self.lag_time = 1000
 
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
