@@ -46,6 +46,7 @@ class SFX(commands.Cog):
         self.last_track_info = {}
         self.current_sfx = {}
         self.channel_cache = {}
+        self.lag_time = 2000
 
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
@@ -823,7 +824,6 @@ class SFX(commands.Cog):
             if player.guild.id in self.current_sfx:
                 del self.current_sfx[player.guild.id]
             await player.pause()
-            if self.lag_time is none: self.lag_time = 2000
             await player.seek(lti[1] + self.lag_time)
             await player.pause(False)
             if player.guild.id in self.last_track_info:
