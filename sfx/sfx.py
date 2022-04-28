@@ -47,6 +47,7 @@ class SFX(commands.Cog):
         self.channel_cache = {}
         # lag_time to compensate for skipping lavalink lag
         self.lag_time = 1000
+        self.repeat_state = {}
 
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
@@ -727,6 +728,8 @@ class SFX(commands.Cog):
             return
 
         track = tracks.tracks[0]
+        self.repeat_state[vc.guild.id] = player.repeat
+        player.repeat = False
 
         if player.current is None and not player.queue:
             player.queue.append(track)
@@ -825,3 +828,5 @@ class SFX(commands.Cog):
             await player.pause(False)
             if player.guild.id in self.last_track_info:
                 del self.last_track_info[player.guild.id]
+            if player.guild.id in self.repeat_state:
+                player.repeat = self.repeat_state[player.guild.id]
