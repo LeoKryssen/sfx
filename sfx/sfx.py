@@ -2,6 +2,7 @@ import asyncio
 import os
 import unicodedata
 from datetime import datetime
+from datetime import timedelta
 
 import aiohttp
 import discord
@@ -752,7 +753,7 @@ class SFX(commands.Cog):
         player.queue.insert(1, player.current)
         await player.skip()
         # lag time compensates for time taken by lavalink to skip track and is still playing last track
-        self.lag_time = (datetime.now()-time0).milliseconds
+        self.lag_time = int((datetime.now()-time0)/timedelta(milliseconds=1))
 
     async def queue_sfx(self, vc, channel, link):
         try:
