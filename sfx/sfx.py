@@ -705,7 +705,16 @@ class SFX(commands.Cog):
             )
 
     async def play_sfx(self, vc, channel, link):
-        player = await lavalink.connect(vc)
+        try:
+            player = lavalink.get_player(vc.guild.id)
+        except NoLavalinkNode:  # Lavalink hasn't been initialised yet
+            if channel and type != "autotts":
+                await channel.send(
+                    "Either the Audio cog is not loaded or lavalink has not been initialized yet. If this continues to happen, please contact the bot owner."
+                )
+                return
+        except KeyError:
+            player = await lavalink.connect(vc)
         link = link[0]  # could be rewritten to add ALL links
         tracks = await player.load_tracks(query=link)
         if not tracks.tracks:
@@ -741,7 +750,16 @@ class SFX(commands.Cog):
         await player.skip()
 
     async def queue_sfx(self, vc, channel, link):
-        player = await lavalink.connect(vc)
+        try:
+            player = lavalink.get_player(vc.guild.id)
+        except NoLavalinkNode:  # Lavalink hasn't been initialised yet
+            if channel and type != "autotts":
+                await channel.send(
+                    "Either the Audio cog is not loaded or lavalink has not been initialized yet. If this continues to happen, please contact the bot owner."
+                )
+                return
+        except KeyError:
+            player = await lavalink.connect(vc)
         link = link[0]  # could be rewritten to add ALL links
         tracks = await player.load_tracks(query=link)
         if not tracks.tracks:
