@@ -743,7 +743,6 @@ class SFX(commands.Cog):
             return
 
         self.last_track_info[player.guild.id] = (player.current, player.position)
-        print(f"player position: {player.position}")
         self.current_sfx[player.guild.id] = track
         player.queue.insert(0, track)
         player.queue.insert(1, player.current)
