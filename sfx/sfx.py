@@ -797,8 +797,10 @@ class SFX(commands.Cog):
             and player.current is not None
             and player.current.track_identifier == lti[0].track_identifier
         ):
-            del self.current_sfx[player.guild.id]
+            if player.guild.id in self.current_sfx:
+                del self.current_sfx[player.guild.id]
             await player.pause()
             await player.seek(lti[1])
             await player.pause(False)
-            del self.last_track_info[player.guild.id]
+            if player.guild.id in self.last_track_info:
+                del self.last_track_info[player.guild.id]
