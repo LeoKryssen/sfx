@@ -1,6 +1,7 @@
 import asyncio
 import os
 import unicodedata
+from datetime import datetime
 
 import aiohttp
 import discord
@@ -9,6 +10,7 @@ import unidecode
 from redbot.core import Config, checks, commands
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.predicates import MessagePredicate
+
 
 from .api import generate_urls
 
@@ -743,10 +745,13 @@ class SFX(commands.Cog):
             return
 
         self.last_track_info[player.guild.id] = (player.current, player.position)
+        time0 = datetime.now()
         self.current_sfx[player.guild.id] = track
         player.queue.insert(0, track)
         player.queue.insert(1, player.current)
         await player.skip()
+        # lag time compensates for time taken by lavalink to skip track and is still playing last track
+        self.lag_time = (datetime.now()-time0).microseconds//1000
 
     async def queue_sfx(self, vc, channel, link):
         try:
@@ -818,7 +823,8 @@ class SFX(commands.Cog):
             if player.guild.id in self.current_sfx:
                 del self.current_sfx[player.guild.id]
             await player.pause()
-            await player.seek(lti[1] + 2000)
+            if self.lag_time is none: self.lag_time = 2000
+            await player.seek(lti[1] + self.lag_time)
             await player.pause(False)
             if player.guild.id in self.last_track_info:
                 del self.last_track_info[player.guild.id]
