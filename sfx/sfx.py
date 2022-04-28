@@ -1,8 +1,6 @@
 import asyncio
 import os
 import unicodedata
-from datetime import datetime
-from datetime import timedelta
 
 import aiohttp
 import discord
@@ -47,6 +45,7 @@ class SFX(commands.Cog):
         self.last_track_info = {}
         self.current_sfx = {}
         self.channel_cache = {}
+        # lag_time to compensate for skipping lavalink lag
         self.lag_time = 2000
 
     def cog_unload(self):
@@ -747,13 +746,10 @@ class SFX(commands.Cog):
             return
 
         self.last_track_info[player.guild.id] = (player.current, player.position)
-        time0 = datetime.now()
         self.current_sfx[player.guild.id] = track
         player.queue.insert(0, track)
         player.queue.insert(1, player.current)
         await player.skip()
-        # lag time compensates for time taken by lavalink to skip track and is still playing last track
-        self.lag_time = int((datetime.now()-time0)/timedelta(milliseconds=1))
 
     async def queue_sfx(self, vc, channel, link):
         try:
